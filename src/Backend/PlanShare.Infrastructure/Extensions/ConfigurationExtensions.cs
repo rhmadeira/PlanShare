@@ -1,9 +1,37 @@
 ﻿using Microsoft.Extensions.Configuration;
+using PlanShare.Domain.Enums;
 
 namespace PlanShare.Infrastructure.Extensions;
 public static class ConfigurationExtensions
 {
-    public static string ConnectionString(this IConfiguration configuration) => configuration.GetConnectionString("Connection")!;
+    public static string ConnectionString(this IConfiguration configuration)
+    {
+        var databaseType = configuration.GetDatabaseType();
+
+        if(databaseType == EnumDatabaseType.PostgreSQL)
+        {
+            return configuration.GetConnectionString("ConnectionMySQL")!;
+        }
+
+        if(databaseType == EnumDatabaseType.SQLServer)
+        {
+            return configuration.GetConnectionString("ConnectionSQLServer")!;
+        }
+
+        if(databaseType == EnumDatabaseType.MySQL)
+        {
+            return configuration.GetConnectionString("ConnectionPostgreSQL")!;
+        }
+
+        return configuration.GetConnectionString("Connection")!;
+    }
+
+    public static EnumDatabaseType GetDatabaseType(this IConfiguration configuration)
+    {
+        var databaseType = configuration.GetConnectionString("DatabaseType")!;
+
+        return Enum.Parse<EnumDatabaseType>(databaseType);
+    }
 
     public static bool IsUnitTestEnviroment(this IConfiguration configuration)
     {
