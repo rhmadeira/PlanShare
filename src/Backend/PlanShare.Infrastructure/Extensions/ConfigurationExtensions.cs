@@ -10,7 +10,7 @@ public static class ConfigurationExtensions
 
         if(databaseType == EnumDatabaseType.PostgreSQL)
         {
-            return configuration.GetConnectionString("ConnectionMySQL")!;
+            return configuration.GetConnectionString("ConnectionPostgreSQL")!;
         }
 
         if(databaseType == EnumDatabaseType.SQLServer)
@@ -20,7 +20,7 @@ public static class ConfigurationExtensions
 
         if(databaseType == EnumDatabaseType.MySQL)
         {
-            return configuration.GetConnectionString("ConnectionPostgreSQL")!;
+            return configuration.GetConnectionString("ConnectionMySQL")!;
         }
 
         return configuration.GetConnectionString("Connection")!;
