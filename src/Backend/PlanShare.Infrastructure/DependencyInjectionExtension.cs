@@ -1,6 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using FluentMigrator.Runner;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using PlanShare.Domain.Enums;
 using PlanShare.Domain.Repositories;
 using PlanShare.Domain.Repositories.Association;
 using PlanShare.Domain.Repositories.User;
@@ -26,6 +28,7 @@ public static class DependencyInjectionExtension
         AddTokenHandlers(services, configuration);
         AddPasswordEncripter(services);
         AddDbContext(services, configuration);
+        AddFluentMigrator(services, configuration);
     }
 
     private static void AddDbContext(IServiceCollection services, IConfiguration configuration)
@@ -67,5 +70,23 @@ public static class DependencyInjectionExtension
 
         services.AddScoped<IAccessTokenValidator>(option => new JwtTokenValidator(signingKey));
         services.AddScoped<IAccessTokenGenerator>(option => new JwtTokenGenerator(expirationTimeMinutes, signingKey));
+    }
+
+    private static void AddFluentMigrator(IServiceCollection services, IConfiguration configuration)
+    {
+        var connectionString = configuration.ConnectionString();
+        var dataBaseType = configuration.GetDatabaseType();
+
+        services.AddFluentMigratorCore()
+            .ConfigureRunner(config =>
+            {
+                var migrationRunnerBuilder = dataBaseType is EnumDatabaseType.MySql;
+
+                config.AddMySql5();
+
+                config.AddSqlServer();
+
+                config.AddPostgres();
+            });
     }
 }
