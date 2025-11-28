@@ -17,6 +17,7 @@ using PlanShare.Infrastructure.Security.Cryptography;
 using PlanShare.Infrastructure.Security.Tokens.Access.Generator;
 using PlanShare.Infrastructure.Security.Tokens.Access.Validator;
 using PlanShare.Infrastructure.Services.LoggedUser;
+using System.Reflection;
 
 namespace PlanShare.Infrastructure;
 public static class DependencyInjectionExtension
@@ -37,7 +38,22 @@ public static class DependencyInjectionExtension
 
         services.AddDbContext<PlanShareDbContext>(dbContextOptions =>
         {
+            var dataBaseType = configuration.GetDatabaseType();
+
             dbContextOptions.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
+
+            if (dataBaseType == EnumDatabaseType.SQLServer)
+            {
+                dbContextOptions.UseSqlServer(connectionString);
+            }
+            else if (dataBaseType == EnumDatabaseType.MySQL)
+            {
+                dbContextOptions.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
+            }
+            else if (dataBaseType == EnumDatabaseType.PostgreSQL)
+            {
+                dbContextOptions.UseNpgsql(connectionString);
+            }
         });
     }
 
@@ -80,13 +96,29 @@ public static class DependencyInjectionExtension
         services.AddFluentMigratorCore()
             .ConfigureRunner(config =>
             {
-                var migrationRunnerBuilder = dataBaseType is EnumDatabaseType.MySql;
+                IMigrationRunnerBuilder migrationRunnerBuilder = null!;
+                var infrastructureAssembly = Assembly.Load("PlanShare.Infrastructure");
 
-                config.AddMySql5();
+                if (dataBaseType == EnumDatabaseType.MySQL)
+                {
+                    migrationRunnerBuilder = config
+                        .AddMySql5();
+                }
+                else if(dataBaseType == EnumDatabaseType.SQLServer)
+                {
+                    migrationRunnerBuilder = config
+                        .AddSqlServer();
+                }
+                else if(dataBaseType == EnumDatabaseType.PostgreSQL)
+                {
+                    migrationRunnerBuilder = config
+                        .AddPostgres();
+                }
 
-                config.AddSqlServer();
-
-                config.AddPostgres();
+                migrationRunnerBuilder
+                    .WithGlobalConnectionString(connectionString)
+                    .ScanIn(infrastructureAssembly)
+                    .For.All();
             });
     }
 }
